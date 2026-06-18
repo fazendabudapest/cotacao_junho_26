@@ -1212,7 +1212,7 @@ function purchaseNeeds(){
       var name=itemName(it);
       var key=stockProductKey(name);
       if(!grouped[key]){
-        grouped[key]={name:name,required:0,plannedValue:0,hasPrice:false,missingPrice:false,usedStockCost:false,cultures:[],suppliers:[],applications:[],bySupplier:{},stock:findStock(name)};
+        grouped[key]={name:name,required:0,plannedValue:0,hasPrice:false,missingPrice:false,usedStockCost:false,hasSubstitute:false,cultures:[],suppliers:[],applications:[],bySupplier:{},stock:findStock(name)};
       }
       var row=grouped[key];
       var required=(Number(it.dose)||0)*hectares;
@@ -1234,6 +1234,8 @@ function purchaseNeeds(){
       row.plannedValue+=required*price;
       if(price>0){ row.hasPrice=true; if(usedStockCost) row.usedStockCost=true; }
       else if(required>0) row.missingPrice=true;
+      // marca se o preço vem de produto substituto
+      if(it.offerId!==undefined&&offers[it.offerId]&&offers[it.offerId].isSimilar) row.hasSubstitute=true;
       supplierPart.required+=required;
       supplierPart.plannedValue+=required*price;
       if(price>0) supplierPart.hasPrice=true;
@@ -1442,33 +1444,48 @@ function renderPurchases(){
     var stockAvg=(window.stockUnitPrices&&row.stock)?window.stockUnitPrices[row.stock[0]]||0:0;
     var quotePrice=row.hasPrice?row.unitPrice:0;
 
-    var moment=marketMomentCell(quotePrice,md);
     var tdMoment=document.createElement('td');
     tdMoment.style.cssText='min-width:140px;vertical-align:top;';
-    var momentStrong=document.createElement('strong');
-    momentStrong.textContent=moment.label;
-    momentStrong.style.cssText='display:block;color:'+moment.color+';font-size:0.85em;';
-    var momentSmall=document.createElement('small');
-    momentSmall.textContent=moment.reason;
-    momentSmall.style.cssText='display:block;color:#555;font-size:0.78em;line-height:1.35;margin-top:3px;';
-    tdMoment.appendChild(momentStrong);
-    tdMoment.appendChild(momentSmall);
-    tr.appendChild(tdMoment);
-
-    var histText=marketHistoryCell(quotePrice,md,stockAvg);
     var tdHist=document.createElement('td');
     tdHist.style.cssText='min-width:160px;vertical-align:top;font-size:0.82em;color:#444;line-height:1.6;';
-    histText.split(' | ').forEach(function(line){
-      var d=document.createElement('div');
-      // destaca linhas de comparação com cor
-      if(line.indexOf('Vs.')>=0){
-        var pct=parseFloat(line.replace(/[^0-9.\-+]/g,''));
-        d.style.color=pct>5?'#c0392b':pct<-5?'#1a7a3c':'#555';
-        d.style.fontWeight='600';
-      }
-      d.textContent=line;
-      tdHist.appendChild(d);
-    });
+
+    if(!md||row.hasSubstitute){
+      var noData=document.createElement('small');
+      noData.style.cssText='color:#aaa;font-style:italic;';
+      if(row.hasSubstitute)
+        noData.textContent='Cotação usa produto substituto — pesquisar "'+row.name+'" no Aegro para comparar';
+      else
+        noData.textContent='Pesquisar "'+row.name+'" no Aegro';
+      tdMoment.appendChild(noData);
+      var noDataHist=document.createElement('small');
+      noDataHist.style.cssText='color:#aaa;font-style:italic;';
+      noDataHist.textContent='—';
+      tdHist.appendChild(noDataHist);
+    } else {
+      var moment=marketMomentCell(quotePrice,md);
+      var momentStrong=document.createElement('strong');
+      momentStrong.textContent=moment.label;
+      momentStrong.style.cssText='display:block;color:'+moment.color+';font-size:0.85em;';
+      var momentSmall=document.createElement('small');
+      momentSmall.textContent=moment.reason;
+      momentSmall.style.cssText='display:block;color:#555;font-size:0.78em;line-height:1.35;margin-top:3px;';
+      tdMoment.appendChild(momentStrong);
+      tdMoment.appendChild(momentSmall);
+
+      var histText=marketHistoryCell(quotePrice,md,stockAvg);
+      histText.split(' | ').forEach(function(line){
+        var d=document.createElement('div');
+        if(line.indexOf('Vs.')>=0){
+          var pct=parseFloat(line.replace(/[^0-9.\-+]/g,''));
+          d.style.color=pct>5?'#c0392b':pct<-5?'#1a7a3c':'#555';
+          d.style.fontWeight='600';
+        }
+        d.textContent=line;
+        tdHist.appendChild(d);
+      });
+    }
+
+    tr.appendChild(tdMoment);
     tr.appendChild(tdHist);
 
     body.appendChild(tr);
@@ -1605,6 +1622,59 @@ function exportPurchaseList(){
   URL.revokeObjectURL(link.href);
 }
 
+// ── EXPORTAR / IMPORTAR SESSÃO COMPLETA ──────────────────────────────────────
+function exportSession(){
+  // Converte todos os itens para formato portável (nome + preço inline)
+  var portableApps=apps.map(function(app){
+    var a=Object.assign({},app);
+    a.items=app.items.map(function(it){
+      return {
+        manual:true,
+        manualId:it.manualId||it.offerId!==undefined?('exp-'+itemKey(it)):('exp-'+Date.now()+'-'+Math.random().toString(16).slice(2)),
+        name:itemName(it),
+        price:itemPrice(it),
+        dose:it.dose||0,
+        stockSource:it.stockSource||false
+      };
+    }).filter(function(it){ return it.name; });
+    return a;
+  });
+  var winners={};
+  products.forEach(function(p){ if(p.vencedor) winners[p.name+'|'+p.cat]=p.vencedor; });
+  var supVis={};
+  suppliers.forEach(function(s){ supVis[s.key]=s.visible; });
+  var data={
+    _version:2,
+    winners:winners,
+    apps:portableApps,
+    safras:safras,
+    supVis:supVis,
+    sackPrices:sackPrices,
+    purchaseNotes:purchaseNotes
+  };
+  var blob=new Blob([JSON.stringify(data)],{type:'application/json;charset=utf-8'});
+  var link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  var date=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  link.download='budapest_sessao_'+date+'.json';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function importSession(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try {
+      var state=JSON.parse(e.target.result);
+      if(!state.apps||!state.safras){ alert('Arquivo inválido. Selecione um arquivo exportado pelo app.'); return; }
+      localStorage.setItem(STORAGE_KEY,e.target.result);
+      alert('Sessão importada com sucesso! O app será recarregado.');
+      location.reload();
+    } catch(err){ alert('Erro ao ler o arquivo. Verifique se é um arquivo .json exportado pelo app.'); }
+  };
+  reader.readAsText(file);
+}
+
 // ── PERSISTÊNCIA ─────────────────────────────────────────────────────────────
 var STORAGE_KEY='budapest_sim_v2';
 var purchaseNotes={}; // key → {priority:'urgent'|'watch'|'wait'|'', note:''}
@@ -1615,7 +1685,7 @@ function saveState(){
     products.forEach(function(p){ if(p.vencedor) winners[p.name+'|'+p.cat]=p.vencedor; });
     var supVis={};
     suppliers.forEach(function(s){ supVis[s.key]=s.visible; });
-    localStorage.setItem(STORAGE_KEY,JSON.stringify({winners:winners,apps:apps,safras:safras,supVis:supVis,sackPrices:sackPrices,purchaseNotes:purchaseNotes}));
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({winners:winners,apps:apps,safras:safras,supVis:supVis,sackPrices:sackPrices,purchaseNotes:purchaseNotes,products:products,suppliers:suppliers.map(function(s){ return {key:s.key,label:s.label,visible:s.visible}; })}));
   } catch(e){}
 }
 
@@ -1648,6 +1718,22 @@ function loadState(){
     }
     if(state.sackPrices&&typeof state.sackPrices==='object') sackPrices=state.sackPrices;
     if(state.purchaseNotes&&typeof state.purchaseNotes==='object') purchaseNotes=state.purchaseNotes;
+    if(state.products&&Array.isArray(state.products)&&state.products.length>0){
+      // restaura cotações importadas — mescla com os produtos já existentes (Cotrijal)
+      state.products.forEach(function(sp){
+        var existing=products.find(function(p){ return p.name===sp.name&&p.cat===sp.cat; });
+        if(existing){
+          // atualiza preços dos fornecedores salvos
+          if(sp.vencedor) existing.vencedor=sp.vencedor;
+          suppliers.forEach(function(s){
+            if(sp[s.key]!==undefined) existing[s.key]=sp[s.key];
+          });
+        } else {
+          products.push(sp);
+        }
+      });
+      buildOffers();
+    }
     return true;
   } catch(e){ return false; }
 }
@@ -1668,12 +1754,8 @@ function correctCurrentSafraName(){
 function initDefaultApps(){
   var sf=safras[0].id;
 
-  // Resolve índice de produto por nome (seguro mesmo com produtos dinâmicos)
-  function ref(name,dose){
-    var idx=products.findIndex(function(p){ return searchKey(p.name)===searchKey(name); });
-    if(idx>=0) return {idx:idx,dose:dose};
-    return {manual:true,manualId:'init-'+searchKey(name),name:name,price:0,dose:dose};
-  }
+  // Sempre cria itens manuais — assim ficam editáveis independente de cotação importada
+  function ref(name,dose){ return {manual:true,manualId:'init-'+searchKey(name),name:name,price:0,dose:dose}; }
   function man(name,dose){ return {manual:true,manualId:'init-'+searchKey(name),name:name,price:0,dose:dose}; }
 
   var defaultApps=[

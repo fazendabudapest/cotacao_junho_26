@@ -14,6 +14,10 @@
       <h1>Simulador de compras</h1>
       <p class="subtitle">Cotacoes de insumos e comparacao de aplicacoes</p>
     </div>
+    <div class="session-actions">
+      <button onclick="exportSession()" style="background:#11843f;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:0.9em;font-weight:600;">&#8595; Exportar sessão</button>
+      <label style="background:#2980b9;color:#fff;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:0.9em;font-weight:600;">&#8593; Importar sessão<input type="file" accept=".json" style="display:none;" onchange="importSession(this.files[0])"></label>
+    </div>
     <div class="hero-actions">
       <div class="hero-badge">
         <span>Safra selecionada</span>
