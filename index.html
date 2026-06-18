@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de compras - Fazenda Budapest</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Fazenda Budapest</p>
+      <h1>Simulador de compras</h1>
+      <p class="subtitle">Cotacoes de insumos e comparacao de aplicacoes</p>
+    </div>
+    <div class="hero-actions">
+      <div class="hero-badge">
+        <span>Safra selecionada</span>
+        <strong id="activesafraname">Safra 26-27</strong>
+      </div>
+      <div class="brand-mark" aria-label="Fazenda Budapest">
+        <img src="logo-budapest.png" alt="Logo da Fazenda Budapest">
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Navegacao principal">
+    <button class="tab-button active" type="button" data-tab="quotes">Cotacoes</button>
+    <button class="tab-button" type="button" data-tab="simulations">Simulacoes por aplicacao</button>
+    <button class="tab-button" type="button" data-tab="purchases">Necessidade de compra</button>
+  </nav>
+
+  <section class="section panel tab-panel active" id="quotes-panel">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Cotacoes</p>
+        <h2>Comparar fornecedores</h2>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Buscar produto...">
+      <button id="filtbtn">Filtros</button>
+      <button id="exportcsvbtn">Exportar CSV</button>
+    </div>
+    <div class="import-box">
+      <input type="text" id="importsupplier" placeholder="Nome do fornecedor">
+      <label class="file-button" for="quoteimport">Importar Excel</label>
+      <input type="file" id="quoteimport" accept=".xlsx,.xlsm">
+      <span id="importstatus"></span>
+    </div>
+    <div class="filtbox" id="filtbox">
+      <p>Fornecedores</p>
+      <div id="supplierfilters" class="filter-row"></div>
+      <p>Categorias</p>
+      <div id="catfilters" class="filter-row"></div>
+      <p>Visualizacao</p>
+      <div class="filter-row">
+        <label><input type="checkbox" id="winneronly">mostrar somente vencedores</label>
+      </div>
+    </div>
+    <p class="helper">Toque no preco para marcar o vencedor. Use a barra da tabela para rolar para baixo e para o lado.</p>
+    <div class="scrollwrap"><table id="tbl"></table></div>
+    <div class="quote-summary" id="quote-summary"></div>
+  </section>
+
+  <section class="section panel tab-panel" id="simulations-panel">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Simulacoes</p>
+        <h2>Montar e comparar aplicacoes</h2>
+      </div>
+      <button class="fab-inline" id="openactivitybtn" type="button">+</button>
+    </div>
+    <div id="safrarow" class="safra-row"></div>
+    <div id="culturafilterrow" class="cultura-filter-row"></div>
+    <div class="simulation-product-filter">
+      <div class="simulation-product-search">
+        <input type="text" id="simulationproductsearch" placeholder="Filtrar aplicacoes por produto">
+        <button id="clearsimulationproduct" type="button" hidden>Limpar</button>
+        <div id="simulationproductsuggestions" class="simulation-product-suggestions"></div>
+      </div>
+      <span id="simulationproductstatus">Digite pelo menos 3 letras</span>
+    </div>
+    <div class="area-settings">
+      <button id="togglecropareas" type="button">Hectares por cultura</button>
+      <span>Area padrao usada nas aplicacoes desta safra</span>
+      <div id="cropareaspanel" class="crop-areas-panel" hidden></div>
+    </div>
+    <div class="sack-price-settings">
+      <button id="togglesackprices" type="button">Valores das sacas</button>
+      <span>Usados na conversao de R$/ha para sacas/ha</span>
+      <div id="sackpricespanel" class="sack-prices-panel" hidden></div>
+    </div>
+    <div id="newappform" class="new-app-form legacy-hidden" style="display:none;">
+      <input type="text" id="newappname" placeholder="Nome da aplicacao">
+      <button id="createappbtn">criar</button>
+    </div>
+    <label class="toggle-line">
+      <input type="checkbox" id="prazotoggle">aplicar desconto de prazo nos itens vencidos pela Cotrijal
+    </label>
+    <div id="prazoconfig" class="prazo-config" style="display:none;">
+      <label>Selic a.a. (%) <input type="number" id="selicrate" value="14.5" step="0.1" min="0" max="100" style="width:72px;height:32px;"></label>
+      <label>Vencimento <input type="date" id="prazodate" value="2027-04-30" style="height:32px;"></label>
+    </div>
+    <div class="winner-picker legacy-hidden">
+      <select id="productpicker">
+        <option value="">Selecione um produto</option>
+      </select>
+      <button id="addwinnerbtn" type="button">Adicionar na aplicacao ativa</button>
+    </div>
+    <div class="manual-product legacy-hidden">
+      <input type="text" id="manualproductname" placeholder="Produto fora da cotacao">
+      <input type="text" id="manualproductprice" inputmode="decimal" placeholder="Preco por L ou kg">
+      <button id="addmanualbtn" type="button">Adicionar produto manual</button>
+    </div>
+    <p id="apphint" class="helper">Toque no titulo de uma aplicacao para deixa-la ativa. Marque duas aplicacoes para comparar lado a lado.</p>
+    <div id="appsrow" class="apps-row"></div>
+    <section class="comparison-section">
+      <div class="comparison-heading">
+        <div>
+          <p class="eyebrow">Comparacao</p>
+          <h3>Comparar aplicacoes</h3>
+        </div>
+        <span id="comparestatus">Selecione duas aplicacoes acima</span>
+      </div>
+      <p id="comparebanner" class="compare-banner"></p>
+      <div id="comparecards" class="compare-cards"></div>
+    </section>
+  </section>
+
+  <section class="section panel tab-panel" id="purchases-panel">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Estoque e planejamento</p>
+        <h2>Necessidade de compra</h2>
+      </div>
+    </div>
+    <div class="purchase-filters">
+      <label>Safra<select id="purchase-safra-filter"></select></label>
+      <label>Cultura<select id="purchase-culture-filter"></select></label>
+      <label>Fornecedor<select id="purchase-supplier-filter"></select></label>
+      <label>Situação
+        <select id="purchase-situation-filter">
+          <option value="">Todas as situações</option>
+          <option value="buy">Precisa comprar</option>
+          <option value="sufficient">Estoque suficiente</option>
+          <option value="stock-missing">Não encontrado no estoque</option>
+          <option value="price-missing">Sem preço/cotação</option>
+          <option value="critical">Sem estoque e sem cotação</option>
+        </select>
+      </label>
+      <label class="purchase-check"><input type="checkbox" id="purchase-missing-only"> Somente itens para comprar</label>
+      <div class="purchase-report-actions">
+        <button id="export-purchase-excel" type="button">Exportar Excel</button>
+        <button id="export-purchase-pdf" type="button">Gerar PDF</button>
+      </div>
+    </div>
+    <div class="purchase-summary" id="purchase-summary"></div>
+    <p class="helper" id="purchase-warning"></p>
+    <div class="purchase-table-wrap">
+      <table class="purchase-table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Cultura</th>
+            <th>Fornecedor</th>
+            <th>Necessidade</th>
+            <th>Estoque total</th>
+            <th>Comprar</th>
+            <th>Preco unitario</th>
+            <th>Valor planejado</th>
+            <th>Valor da compra</th>
+            <th>Situacao</th>
+            <th>Momento de compra</th>
+            <th>Vs. historico</th>
+          </tr>
+        </thead>
+        <tbody id="purchase-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <dialog id="activitydialog" class="side-dialog">
+    <div class="activity-menu">
+      <div class="dialog-title-row">
+        <div>
+          <p class="eyebrow">Nova aplicacao</p>
+          <h2>Selecione a cultura</h2>
+        </div>
+        <button class="plain-close" id="closeactivitybtn" type="button">×</button>
+      </div>
+      <div id="newapplicationcultures" class="culture-choice-list"></div>
+      <div class="new-culture-choice">
+        <input type="text" id="quickculturename" placeholder="Digite uma nova cultura">
+        <button id="quickculturebtn" type="button">Continuar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="appeditdialog" class="app-edit-dialog">
+    <form class="app-edit-card" method="dialog">
+      <div class="dialog-title-row">
+        <div>
+          <p class="eyebrow" id="editapptype">Aplicacao</p>
+          <h2 id="editapptitle">Nova aplicacao</h2>
+        </div>
+        <button class="plain-close" id="closeeditbtn" type="button">×</button>
+      </div>
+
+      <div class="application-main-fields">
+        <label class="full-field" style="padding:0;">Nome da aplicacao
+          <input type="text" id="editappname" placeholder="Ex: Dessecacao pos-emergencia">
+        </label>
+        <label class="full-field" style="padding:0;">Cultura
+          <select id="editappcultura">
+            <option value="">— selecione —</option>
+            <option value="Soja">Soja</option>
+            <option value="Canola">Canola</option>
+            <option value="Milho">Milho</option>
+            <option value="Trigo">Trigo</option>
+            <option value="Outro">Outro</option>
+          </select>
+          <input type="text" id="newculturename" placeholder="Ou digite uma nova cultura">
+        </label>
+        <label class="full-field" style="padding:0;">Hectares desta aplicacao
+          <input type="text" id="editapphectares" inputmode="decimal" placeholder="Deixe vazio para usar a area da cultura">
+          <small id="editappareahint"></small>
+        </label>
+      </div>
+
+      <div class="insumos-head">
+        <h3>Insumos</h3>
+        <button id="addedititembtn" type="button">Incluir insumo</button>
+      </div>
+
+      <datalist id="offerlist"></datalist>
+
+      <div id="edititems" class="edit-items"></div>
+
+      <label class="edit-notes-field">Observacoes agronomicas / operacionais
+        <textarea id="editappnotes" placeholder="Ex: exige volume de calda maior; risco de resistencia..."></textarea>
+      </label>
+
+      <div class="application-totals">
+        <span>Total da aplicacao</span>
+        <strong id="editapptotal">R$ 0,00/ha</strong>
+        <small id="editappsc">0,00 sc/ha</small>
+      </div>
+
+      <div class="dialog-actions">
+        <button id="deleteeditappbtn" class="danger-outline" type="button">Excluir</button>
+        <div>
+          <button id="canceleditbtn" type="button">Cancelar</button>
+          <button id="saveeditbtn" type="button">Salvar</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>Fazenda Budapest — dados salvos automaticamente no navegador. Cotações importadas via Excel ficam disponíveis apenas na sessão atual.</footer>
+</div>
+
+<script src="stock-data.js"></script>
+<script src="market-data.js"></script>
+<script src="simulator.js"></script>
+</body>
+</html>

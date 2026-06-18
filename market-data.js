@@ -1,0 +1,30 @@
+// Dados de mercado Aegro — atualizar conforme novos levantamentos
+// Preços em R$ por unidade (L ou kg conforme produto)
+var marketData = [
+  {name:'Easymix',        aegro:null,   best:null,   bestMonth:'—',        trend:'Estável'},
+  {name:'Aureo',          aegro:26.63,  best:18.32,  bestMonth:'Janeiro',  trend:'Estável/queda leve'},
+  {name:'Spray Care',     aegro:null,   best:null,   bestMonth:'—',        trend:'Estável'},
+  {name:'Ally',           aegro:962.75, best:869.00, bestMonth:'Abril',    trend:'Estável/alta leve'},
+  {name:'Dual Gold',      aegro:37.50,  best:33.50,  bestMonth:'Novembro', trend:'Estável'},
+  {name:'Select',         aegro:34.74,  best:26.67,  bestMonth:'Fevereiro',trend:'Estável/queda leve'},
+  {name:'Zapp QI 620',    aegro:26.70,  best:22.36,  bestMonth:'Julho',    trend:'Alta moderada'},
+  {name:'Calaris',        aegro:50.00,  best:47.90,  bestMonth:'Março',    trend:'Estável'},
+  {name:'Elevore',        aegro:810.00, best:760.00, bestMonth:'Janeiro',  trend:'Estável/alta leve'},
+  {name:'Versatilis',     aegro:198.00, best:185.00, bestMonth:'Maio',     trend:'Estável'},
+  {name:'Miravis',        aegro:444.00, best:220.00, bestMonth:'Janeiro',  trend:'Estável/alta'},
+  {name:'Miravis Duo',    aegro:192.71, best:192.71, bestMonth:'Agosto',   trend:'Estável/alta'},
+  {name:'Priori Xtra',    aegro:102.08, best:102.08, bestMonth:'Janeiro',  trend:'Estável'},
+  {name:'Fox Xpro',       aegro:256.00, best:222.50, bestMonth:'Dezembro', trend:'Estável/alta leve'},
+  {name:'Previnil',       aegro:24.00,  best:24.00,  bestMonth:'Junho',    trend:'Estável'},
+  {name:'Odin 430 SC',    aegro:43.89,  best:27.00,  bestMonth:'Novembro', trend:'Estável/queda leve'},
+  {name:'Elatus',         aegro:473.00, best:396.90, bestMonth:'Agosto',   trend:'Estável/alta'},
+  {name:'Fox Supra',      aegro:361.00, best:340.00, bestMonth:'Abril',    trend:'Estável/alta leve'},
+  {name:'Unizeb Gold',    aegro:31.15,  best:25.00,  bestMonth:'Dezembro', trend:'Estável/alta leve'},
+  {name:'Engeo Pleno S',  aegro:96.88,  best:87.50,  bestMonth:'Novembro', trend:'Estável/alta'},
+  {name:'Perito',         aegro:50.92,  best:38.00,  bestMonth:'Julho',    trend:'Estável/alta leve'},
+  {name:'Primoleo',       aegro:19.95,  best:18.23,  bestMonth:'Maio',     trend:'Estável'},
+  {name:'Primatop',       aegro:null,   best:null,   bestMonth:'—',        trend:'Estável'},
+  {name:'Verdavis',       aegro:482.50, best:437.00, bestMonth:'Abril',    trend:'Estável/alta'},
+  {name:'Brilhante BR',   aegro:22.50,  best:18.00,  bestMonth:'Maio',     trend:'Estável'},
+  {name:'Expedition',     aegro:157.40, best:108.00, bestMonth:'Junho',    trend:'Estável/alta leve'}
+];
